@@ -19,7 +19,7 @@
 	M=-1
 (INIT)
 	@count
-	M=0
+	M=-1
 	@SCREEN
 	D=A
 	@address
