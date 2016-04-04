@@ -3,12 +3,11 @@ package com.kenvifire.hack;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.regex.Pattern;
-
 /**
  * Created by hannahzhang on 16/4/4.
  */
 public class Parser {
+
 
     private String currentCommand;
 
@@ -19,6 +18,8 @@ public class Parser {
     private String label;
 
     private String dest;
+
+    private String comp;
 
     private String jump;
 
@@ -35,16 +36,28 @@ public class Parser {
         if(line == null) {
             return false;
         }
-        currentCommand = line.trim();
+        currentCommand = line.trim().replaceAll("[ \t]+","");
         return true;
 
     }
 
     private void parseInst(String ins) {
-        //A
+        symbol = null;
+        label = null;
+        dest = null;
+        jump = null;
+        comp = null;
+        //A @cons/label
         if(ins.startsWith("@")) {
-            
+            symbol = ins.substring(1);
         }else {
+            int destEnd = ins.indexOf('=');
+            int compEnd = ins.indexOf(';');
+            dest = ins.substring(0, destEnd);
+            if (compEnd > 0) {
+                comp = ins.substring(destEnd, compEnd);
+                jump = ins.substring(compEnd);
+            }
 
         }
 
