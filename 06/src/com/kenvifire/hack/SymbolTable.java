@@ -10,7 +10,9 @@ public class SymbolTable {
 
     private Map<String, Integer> symbolTable;
 
-    private SymbolTable() {
+    private int currentAddress =0;
+
+    public SymbolTable() {
         symbolTable = new HashMap<String, Integer>();
         init();
     }
@@ -39,6 +41,8 @@ public class SymbolTable {
         symbolTable.put("R15",   16);
         symbolTable.put("SCREEN", 16384);
         symbolTable.put("KBD",    24576);
+
+        currentAddress = 17;
     }
 
     public void addEntry(String symbol, int address) {
@@ -50,6 +54,11 @@ public class SymbolTable {
     }
 
     public int getAddress(String symbol) {
-        return symbolTable.get(symbol);
+        Integer address = symbolTable.get(symbol);
+        if(address == null) {
+            address = currentAddress++;
+            symbolTable.put(symbol, address);
+        }
+        return address;
     }
 }
