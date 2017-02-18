@@ -8,7 +8,7 @@ import java.io.*;
  */
 public class Main {
     public static void main(String [] args) throws Exception{
-        String file = "/Users/kenvi/code/study/nand2tetris/projects/06/rect/Rect";
+        String file = "/Users/kenvi/code/study/nand2tetris/projects/06/pong/Pong";
 
         FileInputStream fin = new FileInputStream(file + ".asm");
         Parser parser = new Parser(fin);
