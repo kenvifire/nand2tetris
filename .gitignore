@@ -6,3 +6,6 @@
 *.iml
 *.hack
 */out
+*/.class
+*/.idea
+07/VmTranslator/.idea
