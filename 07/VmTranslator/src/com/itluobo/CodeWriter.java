@@ -11,19 +11,33 @@ import java.io.FileWriter;
 public class CodeWriter {
     private BufferedWriter bw;
     private int label = 0;
-    private int stack_start = 0;
-    private int local_start = 1;
-    private int arg_start = 2;
-    private int this_start = 3;
-    private int that_start = 4;
     private int temp = 5;
+    private int static_seg = 24;
+    private int SP = 0;
+    private int LOCAL = 1;
+    private int ARG = 2;
+    private int THIS = 3;
+    private int THAT = 4;
+
+    private int constant_stack = 256;
+    private int local_stack = 300;
+    private int arg_stack = 400;
+    private int this_stack = 3000;
+    private int that_stack = 3010;
+
 
 
 
     public CodeWriter(File file) throws Exception {
         bw = new BufferedWriter(new FileWriter(file));
-
     }
+    private void loadConstant(String constant) throws Exception {
+        writeAsm("@" + constant);
+    }
+    private void loadSP() throws Exception {
+        writeAsm("@SP");
+    }
+
 
     public void writeInstruction(Instruction instruction) throws Exception {
         //write comment
@@ -40,81 +54,181 @@ public class CodeWriter {
         }
     }
 
+    private void loadSP(String segType) throws Exception {
+        switch (segType) {
+            case "this":
+                writeAsm("@" + THIS);
+                break;
+            case "that":
+                writeAsm("@" + THAT);
+                break;
+            case "temp":
+                writeAsm("@" + temp);
+                break;
+            case "argument":
+                writeAsm("@" + ARG);
+                break;
+            case "static":
+                writeAsm("@" + static_seg);
+                break;
+        }
+    }
+
+
     private void writePushPop(Instruction instruction) throws Exception {
         String stackType = instruction.getArg1();
         String constant = instruction.getArg2();
         switch (instruction.getType()) {
             case PUSH:
-                bw.write("@" + constant + "\n");
-                bw.write("D=A\n");
-                loadSp(stackType);
-                writeAsm("A=M");
-                bw.write("M=D\n");
-                loadSp(stackType);
-                increaseSp(stackType);
+                if(stackType.equals("constant")){
+                    writePushContant(constant);
+                }else if(stackType.equals("pointer")) {
+                    writePushPointer(constant);
+                }
+                else {
+//                    loadSpOffset(stackType, Integer.valueOf(instruction.getArg2()));
+//                    bw.write("D=M\n");
+//                    loadSP();
+//                    writeAsm("A=M");
+//                    writeAsm("M=D");
+//                    increaseSp();
+
+                    //D = segPointer
+                    loadSP(instruction.getArg1());
+                    writeAsm("D=M");
+
+                    //add param 2
+                    writeAsm("@" + instruction.getArg2());
+                    writeAsm("D=D+A");
+
+                    //load value
+                    writeAsm("A=D");
+                    writeAsm("D=M");
+
+                    //write value
+                    writeAsm("@SP");
+                    writeAsm("A=M");
+                    writeAsm("M=D");
+                    writeAsm("@SP");
+                    writeAsm("M=M+1");
+
+
+                }
                 break;
             case POP:
-                loadSp(stackType);
-                decreaseSp(stackType);
-                writeAsm("D=M");
-                loadSp(instruction.getArg1());
-                writeAsm("M=D");
+                if(stackType.equals("constant")) {
+                    writePopConstant(constant);
+                }else if(stackType.equals("pointer")){
+                    writePopPointer(constant);
+                }else {
+                    //D = segPointer
+                    loadSP(instruction.getArg1());
+                    writeAsm("D=M");
+
+                    //add param 2
+                    writeAsm("@" + instruction.getArg2());
+                    writeAsm("D=D+A");
+
+                    //load sp
+                    writeAsm("@SP");
+                    writeAsm("A=M");
+                    writeAsm("M=D");
+
+                    //load value
+                    writeAsm("@SP");
+                    writeAsm("M=M-1");
+                    writeAsm("@SP");
+                    writeAsm("A=M");
+                    writeAsm("D=M");
+
+                    //load addr
+                    writeAsm("@SP");
+                    writeAsm("M=M+1");
+                    writeAsm("@SP");
+                    writeAsm("A=M");
+                    writeAsm("A=M");
+                    writeAsm("M=D");
+                    writeAsm("@SP");
+                    writeAsm("M=M-1");
+
+                }
                 break;
         }
 
     }
 
-    private void loadSp(String stackType) throws Exception{
-        writeAsm("@SP");
+    private void writePopPointer(String pointer) throws Exception {
+        decreaseSp();
+        writeAsm("A=M");
+        writeAsm("D=M");
+        if(pointer.equals("0")) {
+            writeAsm("@" + THIS);
+        }else {
+            writeAsm("@" + THAT);
+        }
+        writeAsm("M=D");
+    }
+
+    private void writePushPointer(String pointer) throws Exception {
+
+        if(pointer.equals("0")) {
+           writeAsm("@" + THIS);
+        }else {
+           writeAsm("@" + THAT);
+        }
+        writeAsm("D=M");
+        loadSP();
+        writeAsm("A=M");
+        writeAsm("M=D");
+        increaseSp();
+    }
+    private void writePushContant(String constant) throws Exception {
+        loadConstant(constant);
+        writeAsm("D=A");
+        loadSP();
+        writeAsm("A=M");
+        writeAsm("M=D");
+        increaseSp();
+    }
+
+    private void writePopConstant(String constant) throws Exception {
+//        decreaseSp();
+    }
+
+    private void loadSpOffset(String stackType, int offset) throws Exception {
+        int baseAddr = 0;
         switch (stackType) {
             case "local":
-                writeAsm("A=A+" + local_start);
+                baseAddr = local_stack;
                 break;
             case "argument":
-                writeAsm("A=A+" + arg_start);
+                baseAddr = arg_stack;
                 break;
             case "this":
-                writeAsm("A=A+" + this_start);
+                baseAddr = this_stack;
                 break;
             case "that":
-                writeAsm("A=A+" + that_start);
+                baseAddr = that_stack;
                 break;
             case "temp":
-                writeAsm("A=A+" + temp);
+                baseAddr = temp;
                 break;
             case "constant"  :
+                baseAddr = constant_stack;
+                offset=0;
                 break;
         }
+        writeAsm("@" + (baseAddr + offset));
     }
 
-    private void increaseSp(String stackType) throws Exception {
-        switch (stackType) {
-            case "local":
-            case "argument":
-            case "this":
-            case "that":
-            case "constant":
-                writeAsm("M=M+1");
-                break;
-            case "temp":
-                temp++;
-                break;
-        }
-    }
 
-    private void decreaseSp(String stackType) throws Exception {
-        switch (stackType) {
-            case "local":
-            case "argument":
-            case "this":
-            case "that":
-            case "constant":
-                writeAsm("M=M-1");
-                break;
-            case "temp":
-                temp--;
-                break;
-        }
+    private void increaseSp() throws Exception {
+        writeAsm("@SP");
+        writeAsm("M=M+1");
+    }
+    private void decreaseSp() throws Exception {
+        writeAsm("@SP");
+        writeAsm("M=M-1");
     }
 
     private void writeAsm(String asm) throws Exception {
