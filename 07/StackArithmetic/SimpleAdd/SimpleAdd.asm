@@ -1,0 +1,41 @@
+//PUSH constant 7
+@7
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
+//PUSH constant 8
+@8
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
+//ADD null null
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=D+M
+@START_0
+0;JMP
+(BOOL_FALSE_0)
+D=0
+@START_0
+0;JMP
+(BOOL_TRUE_0)
+D=-1
+@START_0
+0;JMP
+(START_0)
+@SP
+A=M
+M=D
+@SP
+M=M+1
