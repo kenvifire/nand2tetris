@@ -54,7 +54,10 @@ public class Parser {
     private Instruction parserInstruction(String[] commands) {
         InstructionType type = InstructionType.getByIns(commands[0]);
         if(type == null) throw new RuntimeException("invalid command:" + commands[0]);
-        if(type.getArgCount() == 2) {
+        if(type.getArgCount() == 1){
+           return new Instruction(type, commands[1], null) ;
+        }
+        else if(type.getArgCount() == 2) {
             return new Instruction(type, commands[1], commands[2] );
         }else {
             return new Instruction(type, null ,null);

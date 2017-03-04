@@ -4,6 +4,7 @@ package com.itluobo;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * Created by kenvi on 17/2/18.
@@ -48,10 +49,45 @@ public class CodeWriter {
             case POP:
                 writePushPop(instruction);
                 break;
+            case LABEL:
+                writeLabel(instruction.getArg1());
+                break;
+            case IF_GOTO:
+                writeIfGoto(instruction.getArg1());
+                break;
+            case GOTO:
+                writeGogo(instruction.getArg1());
+                break;
             default:
                 writeArithmetic(instruction);
                 break;
         }
+    }
+
+    private void writeIfGoto(String label) {
+        //pop stack
+        writeAsm("@SP");
+        writeAsm("M=M-1");
+        writeAsm("@SP");
+        writeAsm("A=M");
+        writeAsm("D=M");
+
+        //load label
+        writeAsm("@" + label);
+        //jmp
+        writeAsm("D;JGT");
+    }
+
+    private void writeGogo(String label) {
+
+        //load label
+        writeAsm("@" + label);
+        //jmp
+        writeAsm("0;JMP");
+    }
+
+    private void writeLabel(String label) {
+        writeAsm("(" + label +")");
     }
 
     private void loadSP(String segType) throws Exception {
@@ -70,6 +106,9 @@ public class CodeWriter {
                 break;
             case "static":
                 writeAsm("@" + static_seg);
+                break;
+            case "local":
+                writeAsm("@" + LOCAL);
                 break;
         }
     }
@@ -231,8 +270,12 @@ public class CodeWriter {
         writeAsm("M=M-1");
     }
 
-    private void writeAsm(String asm) throws Exception {
-        bw.write(asm + "\n");
+    private void writeAsm(String asm) {
+        try {
+            bw.write(asm + "\n");
+        }catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
     }
     private void writeArithmetic(Instruction instruction) throws Exception {

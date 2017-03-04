@@ -14,7 +14,10 @@ public enum InstructionType {
     LT("lt", 0),
     AND("and", 0),
     OR("or", 0),
-    NOT("not", 0);
+    NOT("not", 0),
+    LABEL("label", 1),
+    IF_GOTO("if-goto",1),
+    GOTO("goto", 1);
 
     private String ins;
     private int argCount;

@@ -15,8 +15,12 @@ public class Main {
 //        File asmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/07/MemoryAccess/BasicTest/BasicTest.asm");
 //        File vmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/07/MemoryAccess/PointerTest/PointerTest.vm");
 //        File asmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/07/MemoryAccess/PointerTest/PointerTest.asm");
-        File vmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/07/MemoryAccess/StaticTest/StaticTest.vm");
-        File asmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/07/MemoryAccess/StaticTest/StaticTest.asm");
+//        File vmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/07/MemoryAccess/StaticTest/StaticTest.vm");
+//        File asmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/07/MemoryAccess/StaticTest/StaticTest.asm");
+//        File vmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/08/ProgramFlow/BasicLoop/BasicLoop.vm");
+//        File asmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/08/ProgramFlow/BasicLoop/BasicLoop.asm");
+        File vmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/08/ProgramFlow/FibonacciSeries/FibonacciSeries.vm");
+        File asmFile = new File("/Users/kenvi/code/study/nand2tetris/projects/08/ProgramFlow/FibonacciSeries/FibonacciSeries.asm");
 
         Parser parser = new Parser(vmFile);
         CodeWriter codeWriter = new CodeWriter(asmFile);
