@@ -17,7 +17,10 @@ public enum InstructionType {
     NOT("not", 0),
     LABEL("label", 1),
     IF_GOTO("if-goto",1),
-    GOTO("goto", 1);
+    GOTO("goto", 1),
+    CALL("call",2),
+    FUNCTION("function",2),
+    RETURN("return",0);
 
     private String ins;
     private int argCount;
