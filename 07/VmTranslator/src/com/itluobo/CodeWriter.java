@@ -5,6 +5,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by kenvi on 17/2/18.
@@ -31,6 +33,8 @@ public class CodeWriter {
 
     private static final String RET_PREFIX = "ret_";
     private static final String FUN_PREFIX = "function_";
+    private Map<String,Integer> functionReturnMap = new HashMap<>();
+
 
 
 
@@ -70,6 +74,7 @@ public class CodeWriter {
                 writeFunction(instruction.getArg1(), instruction.getArg2());
                 break;
             case RETURN:
+                writeReturn();
                 break;
             default:
                 writeArithmetic(instruction);
@@ -178,16 +183,18 @@ public class CodeWriter {
         increaseSp();
     }
     private void writeFunction(String function, String nArgs) {
-        writeLabel(FUN_PREFIX + function);
+        writeLabel(getFunctionLabel(function));
         for (int i = 0; i < Integer.valueOf(nArgs); i++) {
             writePushConstant("0");
         }
     }
 
     private void writeCall(String function, String nArgs) {
+
+        writeLabel(newReturnAddr(function));
         String returnLabel = RET_PREFIX + function;
         //push returnAddress
-        writeAsm("@" + returnLabel );
+        writeAsm("@" + getCurrentReturnAddr(function) );
         writeAsm("D=A");
         loadSP();
         writeAsm("M=A");
@@ -550,5 +557,32 @@ public class CodeWriter {
             e.printStackTrace();
         }
     }
+
+    public String newReturnAddr(String functionName) {
+        Integer value = functionReturnMap.get(functionName);
+        if(value == null) {
+            functionReturnMap.put(functionName, 1);
+        }else {
+            value = value + 1;
+            functionReturnMap.put(functionName, value);
+        }
+
+        return FUN_PREFIX + functionName +"." + value;
+
+    }
+
+    public String getCurrentReturnAddr(String functionName) {
+        Integer value = functionReturnMap.get(functionName);
+        if(value == null) {
+            throw new RuntimeException("cannot get value for " + functionName);
+        }
+
+        return FUN_PREFIX + functionName + "." + value;
+    }
+
+    public String getFunctionLabel(String functionName) {
+        return FUN_PREFIX + functionName;
+    }
+
 
 }
