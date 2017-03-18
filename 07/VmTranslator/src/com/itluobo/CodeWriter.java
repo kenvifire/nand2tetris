@@ -84,92 +84,97 @@ public class CodeWriter {
 
     private void writeReturn() {
         // temp[0] = local
-        loadSP(LOCAL);
-        pushA();
-        writeInstruction(new Instruction(InstructionType.POP, TEMP, "0"));
+//        writeAsm("//temp[0]=LCL");
+//        loadSP(LOCAL);
+//        writeAsm("//push A");
+//        pushM();
+//        writeAsm("//POP TEMP 0");
+//        writeInstruction(new Instruction(InstructionType.POP, TEMP, "0"));
 
-        //*ARG = pop()
-        loadSP();
-        writeAsm("A=M");
-        writeAsm("D=M");
-        decreaseSp();
-        loadSP(ARG);
-        writeAsm("M=A");
-        writeAsm("M=D");
+//        writeAsm("//*ARG = pop()");
+//        loadSP();
+//        writeAsm("A=M");
+//        writeAsm("D=M");
+//        decreaseSp();
+//        loadSP(ARG);
+//        writeAsm("M=A");
+//        writeAsm("M=D");
 
 
-        //sp = arg + 1
+        writeAsm("//sp = arg + 1");
         loadSP(ARG);
         writeAsm("D=A");
         loadSP();
         writeAsm("M=D+1");
-
-        //THAT = *(endFrame - 1)
-        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-        writePushConstant("1");
-        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-        loadSP();
-        writeAsm("A=M");
-        writeAsm("A=M");
-        writeAsm("D=M");
-        pushD();
-        popSegPointer(THAT);
-
-        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-        writePushConstant("1");
-        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-        loadSP();
-        writeAsm("A=M");
-        writeAsm("A=M");
-        writeAsm("D=M");
-        pushD();
-        popSegPointer(THAT);
-
-        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-        writePushConstant("2");
-        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-        loadSP();
-        writeAsm("A=M");
-        writeAsm("A=M");
-        writeAsm("D=M");
-        pushD();
-        popSegPointer(THIS);
-
-        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-        writePushConstant("3");
-        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-        loadSP();
-        writeAsm("A=M");
-        writeAsm("A=M");
-        writeAsm("D=M");
-        pushD();
-        popSegPointer(ARG);
-
-
-        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-        writePushConstant("4");
-        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-        loadSP();
-        writeAsm("A=M");
-        writeAsm("A=M");
-        writeAsm("D=M");
-        pushD();
-        popSegPointer(LOCAL);
-
-
-        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-        writePushConstant("3");
-        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-        loadSP();
-        writeAsm("A=M");
-        writeAsm("A=M");
-        writeAsm("A=M");
-        writeAsm("0;JMP");
+//
+//        writeAsm("//THIS = *(endFrame - 1)");
+//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
+//        writePushConstant("1");
+//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
+//        loadSP();
+//        writeAsm("A=M");
+//        writeAsm("A=M");
+//        writeAsm("D=M");
+//        pushD();
+//        popSegPointer(THAT);
+//
+//        writeAsm("//THIS = *(endFrame -2)");
+//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
+//        writePushConstant("2");
+//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
+//        loadSP();
+//        writeAsm("A=M");
+//        writeAsm("A=M");
+//        writeAsm("D=M");
+//        pushD();
+//        popSegPointer(THIS);
+//
+//        writeAsm("//ARG = *(endFrame - 4");
+//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
+//        writePushConstant("3");
+//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
+//        loadSP();
+//        writeAsm("A=M");
+//        writeAsm("A=M");
+//        writeAsm("D=M");
+//        pushD();
+//        popSegPointer(ARG);
+//
+//
+//        writeAsm("//LCL = *(endFrame - 4");
+//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
+//        writePushConstant("4");
+//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
+//        loadSP();
+//        writeAsm("A=M");
+//        writeAsm("A=M");
+//        writeAsm("D=M");
+//        pushD();
+//        popSegPointer(LOCAL);
+//
+//
+//        writeAsm("//goto return addr");
+//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
+//        writePushConstant("3");
+//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
+//        loadSP();
+//        writeAsm("A=M");
+//        writeAsm("A=M");
+//        writeAsm("A=M");
+//        writeAsm("0;JMP");
     }
 
 
     private void pushA() {
         writeAsm("D=A");
+        loadSP();
+        writeAsm("A=M");
+        writeAsm("M=D");
+        increaseSp();
+    }
+
+    private void pushM() {
+        writeAsm("D=M");
         loadSP();
         writeAsm("A=M");
         writeAsm("M=D");
@@ -276,22 +281,22 @@ public class CodeWriter {
 
     private void loadSP(String segType) {
         switch (segType) {
-            case "this":
+            case THIS:
                 writeAsm("@" + 3);
                 break;
-            case "that":
+            case THAT:
                 writeAsm("@" + 4);
                 break;
-            case "temp":
+            case TEMP:
                 writeAsm("@" + temp);
                 break;
-            case "argument":
+            case ARG:
                 writeAsm("@" + 2);
                 break;
-            case "static":
+            case STATIC:
                 writeAsm("@" + static_seg);
                 break;
-            case "local":
+            case LOCAL:
                 writeAsm("@" + 1);
                 break;
             default:
@@ -348,7 +353,11 @@ public class CodeWriter {
                 }else {
                     //D = segPointer
                     loadSP(instruction.getArg1());
-                    writeAsm("D=M");
+                    if(instruction.getArg1().equals(TEMP)) {
+                        writeAsm("D=A");
+                    }else {
+                        writeAsm("D=M");
+                    }
 
                     //add param 2
                     writeAsm("@" + instruction.getArg2());
