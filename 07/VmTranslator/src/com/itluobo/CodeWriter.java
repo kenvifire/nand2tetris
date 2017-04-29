@@ -1,6 +1,8 @@
 package com.itluobo;
 
 
+import com.sun.org.apache.bcel.internal.generic.POP;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -29,11 +31,15 @@ public class CodeWriter {
     private static final String ARG = "argument";
     private static final String STATIC = "static";
     private static final String LOCAL = "local";
+    private static final String RET_ARRD = "retAddr";
+    private static final String STACK = "stack";
 
 
     private static final String RET_PREFIX = "ret_";
     private static final String FUN_PREFIX = "function_";
     private Map<String,Integer> functionReturnMap = new HashMap<>();
+
+    private boolean ignoreComment = false;
 
 
 
@@ -84,86 +90,90 @@ public class CodeWriter {
 
     private void writeReturn() {
         // temp[0] = local
-//        writeAsm("//temp[0]=LCL");
-//        loadSP(LOCAL);
-//        writeAsm("//push A");
-//        pushM();
-//        writeAsm("//POP TEMP 0");
-//        writeInstruction(new Instruction(InstructionType.POP, TEMP, "0"));
+        writeAsm("//temp[0]=LCL");
+        loadSP(LOCAL);
+        writeAsm("//push A");
+        pushM();
+        writeAsm("//POP TEMP 0");
+        writeInstruction(new Instruction(InstructionType.POP, TEMP, "0"));
 
-//        writeAsm("//*ARG = pop()");
-//        loadSP();
-//        writeAsm("A=M");
-//        writeAsm("D=M");
-//        decreaseSp();
-//        loadSP(ARG);
-//        writeAsm("M=A");
-//        writeAsm("M=D");
-
-
-        writeAsm("//sp = arg + 1");
+        //*ARG = pop()
+        decreaseSp();
+        loadSP();
+        writeAsm("A=M");
+        writeAsm("D=M");
         loadSP(ARG);
-        writeAsm("D=A");
+        writeAsm("A=M");
+        writeAsm("M=D");
+
+        //restore return address to stack
+        restoreSetPointer(RET_ARRD);
+        writeInstruction(new Instruction(InstructionType.POP, TEMP, "1"));
+
+
+        //SP=ARG+1
+        loadSP(ARG);
+        writeAsm("D=M");
         loadSP();
         writeAsm("M=D+1");
-//
-//        writeAsm("//THIS = *(endFrame - 1)");
-//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-//        writePushConstant("1");
-//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-//        loadSP();
-//        writeAsm("A=M");
-//        writeAsm("A=M");
-//        writeAsm("D=M");
-//        pushD();
-//        popSegPointer(THAT);
-//
-//        writeAsm("//THIS = *(endFrame -2)");
-//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-//        writePushConstant("2");
-//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-//        loadSP();
-//        writeAsm("A=M");
-//        writeAsm("A=M");
-//        writeAsm("D=M");
-//        pushD();
-//        popSegPointer(THIS);
-//
-//        writeAsm("//ARG = *(endFrame - 4");
-//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-//        writePushConstant("3");
-//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-//        loadSP();
-//        writeAsm("A=M");
-//        writeAsm("A=M");
-//        writeAsm("D=M");
-//        pushD();
-//        popSegPointer(ARG);
-//
-//
-//        writeAsm("//LCL = *(endFrame - 4");
-//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-//        writePushConstant("4");
-//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-//        loadSP();
-//        writeAsm("A=M");
-//        writeAsm("A=M");
-//        writeAsm("D=M");
-//        pushD();
-//        popSegPointer(LOCAL);
-//
-//
-//        writeAsm("//goto return addr");
-//        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
-//        writePushConstant("3");
-//        writeInstruction(new Instruction(InstructionType.SUB, null, null));
-//        loadSP();
-//        writeAsm("A=M");
-//        writeAsm("A=M");
-//        writeAsm("A=M");
-//        writeAsm("0;JMP");
+
+
+
+
+
+        restoreSetPointer(THAT);
+        restoreSetPointer(THIS);
+        restoreSetPointer(ARG);
+        restoreSetPointer(LOCAL);
+
+
+
+        //goto retAddr
+        loadSP(TEMP);
+        writeAsm("A=A+1");
+        writeAsm("A=M");
+        writeAsm("0;JMP");
+
     }
 
+    private void restoreSetPointer(String segType) {
+        int offset = 0;
+
+        switch (segType) {
+            case THAT:
+                offset = 1;
+                break;
+            case THIS:
+                offset = 2;
+                break;
+            case ARG:
+                offset = 3;
+                break;
+            case LOCAL:
+                offset = 4;
+                break;
+            case RET_ARRD:
+                offset = 5;
+                break;
+        }
+
+
+        writeAsm("//restore " + segType);
+        writeInstruction(new Instruction(InstructionType.PUSH, TEMP, "0"));
+        writePushConstant(String.valueOf(offset));
+        writeInstruction(new Instruction(InstructionType.SUB, null, null));
+
+        writeAsm("//"  + segType + " = *(endFrame -" + offset + ")");
+        decreaseSp();
+        writeAsm("A=M");
+        writeAsm("A=M");
+        writeAsm("D=M");
+        pushD();
+        if(!segType.equals(RET_ARRD)) {
+            popSegPointer(segType);
+        }
+
+    }
 
     private void pushA() {
         writeAsm("D=A");
@@ -196,25 +206,31 @@ public class CodeWriter {
 
     private void writeCall(String function, String nArgs) {
 
-        writeLabel(newReturnAddr(function));
-        String returnLabel = RET_PREFIX + function;
+        String returnLabel = newReturnAddr(function);
         //push returnAddress
+
+        writeComment("push returnAddress");
         writeAsm("@" + getCurrentReturnAddr(function) );
         writeAsm("D=A");
         loadSP();
-        writeAsm("M=A");
+        writeAsm("A=M");
         writeAsm("M=D");
         increaseSp();
 
 
         //push segments
+        writeComment("push segment local");
         pushSegPointer(LOCAL);
+        writeComment("push segment arg");
         pushSegPointer(ARG);
+        writeComment("push segment this");
         pushSegPointer(THIS);
+        writeComment("push segment that");
         pushSegPointer(THAT);
 
-        // arg = arg -5 - nArgs
-        pushSegPointer(ARG);
+        // arg = sp -5 - nArgs
+        writeComment("arg = sp  -5 - nargs");
+        pushSegPointer(STACK);
         writePushConstant("5");
         writeArithmetic(new Instruction(InstructionType.SUB, null, null));
         writePushConstant(nArgs);
@@ -222,15 +238,17 @@ public class CodeWriter {
         popSegPointer(ARG);
 
         //LCL = SP
-        loadSP();
+        pushSegPointer(STACK);
         popSegPointer(LOCAL);
 
 
         // goto functionName
+        writeComment("goto " + function);
         writeGogo(FUN_PREFIX + function);
 
         //(return address)
-        writeAsm("(" + returnLabel + ")");
+        writeComment("return address " + returnLabel);
+        writeLabel(returnLabel);
 
 
     }
@@ -299,6 +317,9 @@ public class CodeWriter {
             case LOCAL:
                 writeAsm("@" + 1);
                 break;
+            case STACK:
+                writeAsm("@" + 0);
+                break;
             default:
                 throw new RuntimeException("invalid seg type:" + segType);
         }
@@ -325,7 +346,11 @@ public class CodeWriter {
 
                     //D = segPointer
                     loadSP(instruction.getArg1());
-                    writeAsm("D=M");
+                    if(instruction.getArg1().equals(TEMP)) {
+                        writeAsm("D=A");
+                    }else {
+                        writeAsm("D=M");
+                    }
 
                     //add param 2
                     writeAsm("@" + instruction.getArg2());
@@ -464,8 +489,22 @@ public class CodeWriter {
         writeAsm("@SP");
         writeAsm("M=M-1");
     }
+    private void dup() {
+        writeAsm("@SP");
+        writeAsm("M=M-1");
+        writeAsm("A=M");
+        writeAsm("D=M");
+        writeAsm("@SP");
+        writeAsm("M=M+1");
+        writeAsm("A=M");
+        writeAsm("M=D");
+        writeAsm("@SP");
+        writeAsm("M=M+1");
+    }
 
     private void writeAsm(String asm) {
+        if(ignoreComment && asm.startsWith("//")) return;
+
         try {
             bw.write(asm + "\n");
         }catch (IOException e) {
@@ -570,12 +609,12 @@ public class CodeWriter {
     public String newReturnAddr(String functionName) {
         Integer value = functionReturnMap.get(functionName);
         if(value == null) {
-            functionReturnMap.put(functionName, 1);
+            value = 1;
         }else {
             value = value + 1;
-            functionReturnMap.put(functionName, value);
         }
 
+        functionReturnMap.put(functionName, value);
         return FUN_PREFIX + functionName +"." + value;
 
     }
@@ -591,6 +630,10 @@ public class CodeWriter {
 
     public String getFunctionLabel(String functionName) {
         return FUN_PREFIX + functionName;
+    }
+
+    private void writeComment(String comment) {
+        writeAsm("//" + comment);
     }
 
 

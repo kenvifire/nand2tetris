@@ -4,6 +4,16 @@
 // File name: projects/08/FunctionCalls/SimpleFunction/SimpleFunction.vm
 
 // Performs a simple calculation and returns the result.
+function test 0
+call test1 0
+return
+
+function test1 0
+return 
+
+
+
+
 //function SimpleFunction.test 2
 //push local 0
 //push local 1
@@ -13,4 +23,4 @@
 //add
 //push argument 1
 //sub
-return
+//return
